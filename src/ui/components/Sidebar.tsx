@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { adminLoginService } from "@/api/client/services/admin.login";
 import {
   LayoutDashboard,
   Gamepad2,
@@ -24,8 +25,8 @@ export const Sidebar = () => {
     { path: "/purchases", label: "Purchases", icon: ShoppingCart },
   ];
 
-  const handleLogout = () => {
-    localStorage.removeItem("adminToken");
+  const handleLogout = async () => {
+    await adminLoginService.logoutAdmin();
     router.push("/login");
   };
 

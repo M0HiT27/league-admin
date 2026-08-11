@@ -9,7 +9,8 @@ export const API_ENDPOINTS = {
   },
   ADMIN:{
     LOGIN:"/api/admin/login",
+    LOGOUT:"/api/admin/logout",
     GET_ALL_PASS_PURCHASES_WITH_PLAYERS:"/api/auth/passes/with-players",
-    
+
   }
 } as const;
