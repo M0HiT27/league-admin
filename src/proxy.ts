@@ -1,7 +1,7 @@
-// middleware.ts
+// proxy.ts
 import { NextRequest, NextResponse } from 'next/server';
 
-export default function middleware(request: NextRequest) {
+export default function proxy(request: NextRequest) {
   const token = request.cookies.get('session')?.value;
 
   if (!token) {
