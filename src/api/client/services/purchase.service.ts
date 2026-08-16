@@ -172,12 +172,12 @@ export const passPurchasesService = {
 
     async purchaseCashPass (data: PurchasePassPayload): Promise<string> {
     try {
-        const response = await api.post<ApiResponse<PurchasePassResponse>>(
+        const response = await api.post(
             API_ENDPOINTS.PURCHASE.PURCHASE_CASH_PASS,
             data
         );
     
-        if (!response.data.success || !response.data.data) {
+        if (!response.data.success) {
             throw new Error(response.data.error || 'Failed to purchase a pass');
         }
     
