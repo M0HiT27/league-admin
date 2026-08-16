@@ -26,7 +26,7 @@ interface PurchasePassPayload {
     pincode: string;
     address: string;
   };
-  amouamount_paid : number
+  amount_paid : number
 }
 export interface PlayerDTO {
     playerName: string;
