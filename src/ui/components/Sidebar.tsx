@@ -19,6 +19,7 @@ export const Sidebar = () => {
   const menuItems = [
     { path: "/home", label: "Home", icon: Home },
     { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { path: "/dashboard/cash-purchase", label: "Cash Purchase", icon: Ticket },
     { path: "/games", label: "Games", icon: Gamepad2 },
     { path: "/passes", label: "Passes", icon: Ticket },
     { path: "/pass-offers", label: "Pass Offers", icon: Tag },
