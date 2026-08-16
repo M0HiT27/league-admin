@@ -7,6 +7,7 @@ export interface ClientGame {
   name: string;
   genre: string;
   requiredPlayers: number;
+  difficulty : "LIGHT" | "HEAVY" | "MEDIUM" | null;
   maxSlots: number;
   estimatedRuntimeMinutes: number;
   currentBookedSlots: number;
@@ -18,6 +19,7 @@ export interface ClientPass {
   name: string;
   description: string;
   requiredSelectionCount: number;
+  minimumDifficultGamesToSelect: number;
   pricing: {
     basePrice: number;
     discountedPrice: number;
@@ -28,6 +30,14 @@ export interface ClientPass {
     discountEndsAtMs: number | null;
   };
   games: ClientGame[];
+  kit?: {
+    id: number;
+    name: string;
+    items: {
+      id: number;
+      name: string;
+    }[];
+  }
 }
 
 interface ApiResponse<T> {

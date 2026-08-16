@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { adminLoginService } from "@/api/client/services/admin.login";
 import {
   LayoutDashboard,
   Gamepad2,
@@ -18,14 +19,15 @@ export const Sidebar = () => {
   const menuItems = [
     { path: "/home", label: "Home", icon: Home },
     { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { path: "/dashboard/cash-purchase", label: "Cash Purchase", icon: Ticket },
     { path: "/games", label: "Games", icon: Gamepad2 },
     { path: "/passes", label: "Passes", icon: Ticket },
     { path: "/pass-offers", label: "Pass Offers", icon: Tag },
     { path: "/purchases", label: "Purchases", icon: ShoppingCart },
   ];
 
-  const handleLogout = () => {
-    localStorage.removeItem("adminToken");
+  const handleLogout = async () => {
+    await adminLoginService.logoutAdmin();
     router.push("/login");
   };
 

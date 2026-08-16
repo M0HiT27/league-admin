@@ -3,7 +3,6 @@ import axios from 'axios';
 const api = axios.create({
   // No baseURL needed if calling internal Next.js routes; it uses the window context.
   baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || '', // Use environment variable for base URL
-  timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
   },
