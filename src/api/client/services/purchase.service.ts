@@ -1,7 +1,33 @@
 import ExcelJS from 'exceljs';
 import api from '../axios-instance';
 import { API_ENDPOINTS } from '../endpoints';
-
+interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  message : string
+}
+interface PurchasePassResponse {
+  transactionId: number;
+  razorpayOrderId: string;
+  amount: number;
+  currency: string;
+  keyId: string;
+}
+interface PurchasePassPayload {
+  pass_id: number;
+  selected_game_ids: number[];
+  buyer: {
+    name: string;
+    email: string;
+    mobile: string;
+    dial_code:string;
+    city: string;
+    pincode: string;
+    address: string;
+  };
+  amouamount_paid : number
+}
 export interface PlayerDTO {
     playerName: string;
     playerNumber: string;
@@ -143,4 +169,23 @@ export const passPurchasesService = {
             type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         });
     },
+
+    async purchaseCashPass (data: PurchasePassPayload): Promise<string> {
+    try {
+        const response = await api.post<ApiResponse<PurchasePassResponse>>(
+            API_ENDPOINTS.PURCHASE.PURCHASE_CASH_PASS,
+            data
+        );
+    
+        if (!response.data.success || !response.data.data) {
+            throw new Error(response.data.error || 'Failed to purchase a pass');
+        }
+    
+        return response.data.message;
+    } catch (err: any) {
+        
+        const message =
+        err?.response?.data?.message ?? err?.response?.data?.error ?? err?.message ?? 'Failed to purchase a pass';
+        throw new Error(message);
+    }}
 };

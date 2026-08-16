@@ -4,8 +4,8 @@ export const API_ENDPOINTS = {
     GET_PASS_BY_ID: (id: string) => `/api/passes/${id}`,
   },
   PURCHASE:{
-    PURCHASE_A_PASS:"/api/purchases"
-
+    PURCHASE_A_PASS:"/api/purchases",
+    PURCHASE_CASH_PASS :"/api/auth/purchase"
   },
   ADMIN:{
     LOGIN:"/api/admin/login",
