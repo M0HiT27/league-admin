@@ -11,6 +11,7 @@ export const API_ENDPOINTS = {
     LOGIN:"/api/admin/login",
     LOGOUT:"/api/admin/logout",
     GET_ALL_PASS_PURCHASES_WITH_PLAYERS:"/api/auth/passes/with-players",
+    GET_ALL_GAMES_WITH_PLAYERS:"/api/auth/games/with-players",
 
   }
 } as const;

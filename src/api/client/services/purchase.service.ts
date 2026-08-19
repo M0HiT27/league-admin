@@ -137,6 +137,84 @@ function buildPasswiseWorkbook(passes: PassDTO[]): ExcelJS.Workbook {
     return workbook;
 }
 
+export interface GamePlayerDTO {
+    playerName: string;
+    playerNumber: string;
+    email: string;
+    address: string;
+    city: string;
+    passId: number;
+    passName: string;
+    purchaseTime: string;
+    amountPaid: number | null;
+    modeOfPayment: string | null;
+    invoiceUrl: string | null;
+}
+
+export interface GameDTO {
+    id: number;
+    name: string;
+    players: GamePlayerDTO[];
+}
+
+export interface GetGamesWithPlayersResponse {
+    success: boolean;
+    data: GameDTO[];
+    meta: PaginationMeta | null;
+    error?: string;
+}
+
+const COLUMNS_GAMEWISE = [
+    { header: 'Player Name', key: 'playerName', width: 24 },
+    { header: 'Player Number', key: 'playerNumber', width: 18 },
+    { header: 'Email', key: 'email', width: 30 },
+    { header: 'Address', key: 'address', width: 30 },
+    { header: 'City', key: 'city', width: 16 },
+    { header: 'Pass', key: 'passName', width: 24 },
+    { header: 'Purchase Time', key: 'purchaseTime', width: 22 },
+    { header: 'Amount Paid', key: 'amountPaid', width: 14 },
+    { header: 'Mode of Payment', key: 'modeOfPayment', width: 16 },
+    { header: 'Invoice URL', key: 'invoiceUrl', width: 40 },
+];
+
+/** One sheet per game; one row per player. No selectedGames column — redundant once scoped per-game. */
+function buildGamewiseWorkbook(games: GameDTO[]): ExcelJS.Workbook {
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'passPurchasesService';
+    workbook.created = new Date();
+
+    const usedNames = new Set<string>();
+
+    for (const game of games) {
+        const sheet = workbook.addWorksheet(sanitizeSheetName(game.name, usedNames));
+        sheet.columns = COLUMNS_GAMEWISE;
+        sheet.getRow(1).font = { bold: true };
+        sheet.views = [{ state: 'frozen', ySplit: 1 }];
+
+        for (const player of game.players || []) {
+            sheet.addRow({
+                playerName: player.playerName ?? '',
+                playerNumber: player.playerNumber ?? '',
+                email: player.email ?? '',
+                address: player.address ?? '',
+                city: player.city ?? '',
+                passName: player.passName ?? '',
+                purchaseTime: player.purchaseTime ?? '',
+                amountPaid: player.amountPaid ?? '',
+                modeOfPayment: player.modeOfPayment ?? '',
+                invoiceUrl: player.invoiceUrl ?? '',
+            });
+        }
+
+        sheet.autoFilter = {
+            from: { row: 1, column: 1 },
+            to: { row: 1, column: COLUMNS_GAMEWISE.length },
+        };
+    }
+
+    return workbook;
+}
+
 export const passPurchasesService = {
     async getAllPassPurchasesWithPlayers(
         page: number = 1,
@@ -145,6 +223,10 @@ export const passPurchasesService = {
         const response = await api.get(API_ENDPOINTS.ADMIN.GET_ALL_PASS_PURCHASES_WITH_PLAYERS, {
             params: { page, pageSize },
         });
+        return response.data;
+    },
+    async getAllGamesWithPlayers(){
+        const response = await api.get(API_ENDPOINTS.ADMIN.GET_ALL_GAMES_WITH_PLAYERS);
         return response.data;
     },
 
@@ -156,9 +238,13 @@ export const passPurchasesService = {
         }
 
         if (options.type === "gamewise") {
-            // TODO: gamewise export needs its own endpoint + DTO shape (data
-            // format differs from the passwise response). Not implemented yet.
-            throw new Error("Gamewise export is not implemented yet.");
+           const games = await this.getAllGamesWithPlayers();
+            const workbook = buildGamewiseWorkbook(games.data || []);
+
+            const buffer = await workbook.xlsx.writeBuffer();
+            return new Blob([buffer], {
+                type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            });
         }
 
         const passes = await this.getAllPassPurchasesWithPlayers();
