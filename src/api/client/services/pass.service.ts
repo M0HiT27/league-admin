@@ -122,6 +122,7 @@ export interface DownloadPurchaseDataOptions {
 export interface PurchaseSummaryDTO {
     purchase_id: number;
     person_name: string;
+    mobile: string;
     pass_name: string;
     pass_id: number;
     status: string;
@@ -132,6 +133,14 @@ export interface GetPurchasesByEmailResponse {
     email: string;
     count: number;
     purchases: PurchaseSummaryDTO[];
+}
+
+export interface InvalidPurchaseDTO {
+    id: number;
+    email: string;
+    mobile: string;
+    name: string;
+    pass_name: string;
 }
 
 export interface SelectedGameDTO {
@@ -428,6 +437,15 @@ export const passService = {
             return response.data;
         } catch (err: any) {
             throw new Error(extractErrorMessage(err, 'Failed to fetch purchases for this email'));
+        }
+    },
+
+    async getInvalidPurchases(): Promise<InvalidPurchaseDTO[]> {
+        try {
+            const response = await api.get(API_ENDPOINTS.PURCHASE.GET_INVALID_PURCHASES);
+            return response.data;
+        } catch (err: any) {
+            throw new Error(extractErrorMessage(err, 'Failed to fetch invalid purchases'));
         }
     },
 

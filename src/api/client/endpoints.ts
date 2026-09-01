@@ -9,7 +9,7 @@ export const API_ENDPOINTS = {
     GET_PURCHASE_BY_EMAIL:(email: string) => `/api/auth/purchase?email=${email}`,
     GET_SELECTED_GAMES_IN_PURCHASE:(purchaseId:number) => `/api/auth/purchase/${purchaseId}/selected-games`,
     CHANGE_SELECTED_GAMES_IN_PURCHASE:(purchaseId:number) => `/api/auth/purchase/${purchaseId}/selected-games`,
-
+    GET_INVALID_PURCHASES:"/api/auth/purchase/invalid",
   },
   ADMIN:{
     LOGIN:"/api/admin/login",
