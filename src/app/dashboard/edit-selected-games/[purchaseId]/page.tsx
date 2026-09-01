@@ -217,7 +217,7 @@ export default function EditSelectedGamesPage({ params }: EditSelectedGamesPageP
           ))}
         </div>
         <button
-          onClick={() => router.push('/purchases')}
+          onClick={() => router.push('/dashboard/purchases')}
           className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-medium transition-colors cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -233,7 +233,7 @@ export default function EditSelectedGamesPage({ params }: EditSelectedGamesPageP
       <div className="flex items-center justify-between">
         <button
           type="button"
-          onClick={() => router.push('/purchases')}
+          onClick={() => router.push('/dashboard/purchases')}
           className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -482,7 +482,7 @@ export default function EditSelectedGamesPage({ params }: EditSelectedGamesPageP
           <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-3 pt-5 border-t border-slate-100">
             <button
               type="button"
-              onClick={() => router.push('/purchases')}
+              onClick={() => router.push('/dashboard/purchases')}
               className="w-full sm:w-auto px-5 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg text-sm font-medium transition-colors cursor-pointer text-center"
             >
               Cancel
