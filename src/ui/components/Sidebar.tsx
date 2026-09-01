@@ -10,6 +10,7 @@ import {
   Tag,
   ShoppingCart,
   LogOut,
+  AlertTriangle,
 } from "lucide-react";
 
 export const Sidebar = () => {
@@ -23,7 +24,8 @@ export const Sidebar = () => {
     { path: "/games", label: "Games", icon: Gamepad2 },
     { path: "/passes", label: "Passes", icon: Ticket },
     { path: "/pass-offers", label: "Pass Offers", icon: Tag },
-    { path: "/purchases", label: "Purchases", icon: ShoppingCart },
+    { path: "/dashboard/purchases", label: "Purchases", icon: ShoppingCart },
+    { path: '/dashboard/invalid-purchases', label: 'Invalid Purchases', icon: AlertTriangle },
   ];
 
   const handleLogout = async () => {
