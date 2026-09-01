@@ -1,12 +1,58 @@
 import ExcelJS from 'exceljs';
 import api from '../axios-instance';
 import { API_ENDPOINTS } from '../endpoints';
+
+// ── RESTORED from old service ───────────────────────────────────────────
+
+export interface ClientGame {
+  id: number;
+  name: string;
+  genre: string;
+  requiredPlayers: number;
+  difficulty: "LIGHT" | "HEAVY" | "MEDIUM" | null;
+  maxSlots: number;
+  estimatedRuntimeMinutes: number;
+  currentBookedSlots: number;
+  availableSlots: number;
+}
+
+export interface ClientPass {
+  id: number;
+  name: string;
+  description: string;
+  requiredSelectionCount: number;
+  minimumDifficultGamesToSelect: number;
+  pricing: {
+    basePrice: number;
+    discountedPrice: number;
+    hasActiveDiscount: boolean;
+    discountPercent: number;
+    savings: number;
+    discountName: string | null;
+    discountEndsAtMs: number | null;
+  };
+  games: ClientGame[];
+  kit?: {
+    id: number;
+    name: string;
+    items: {
+      id: number;
+      name: string;
+    }[];
+  }
+}
+
+// ── shared response envelope ────────────────────────────────────────────
+// NOTE: new service added `message` here as required. Made it optional
+// below so getAll/getById (old endpoints, which never returned `message`)
+// stay type-safe — worth confirming the actual GET_PASSES response shape.
 interface ApiResponse<T> {
   success: boolean;
   data?: T;
   error?: string;
-  message : string
+  message?: string;
 }
+
 interface PurchasePassResponse {
   transactionId: number;
   razorpayOrderId: string;
@@ -14,6 +60,11 @@ interface PurchasePassResponse {
   currency: string;
   keyId: string;
 }
+
+// NOTE: new service added `amount_paid` here (used by purchaseCashPass).
+// Made it optional so the old purchaseAPass (razorpay) call sites, which
+// never sent this field, keep compiling as-is. Flag if amount_paid should
+// actually be required/sent on the razorpay path too.
 interface PurchasePassPayload {
   pass_id: number;
   selected_game_ids: number[];
@@ -21,13 +72,16 @@ interface PurchasePassPayload {
     name: string;
     email: string;
     mobile: string;
-    dial_code:string;
+    dial_code: string;
     city: string;
     pincode: string;
     address: string;
   };
-  amount_paid : number
+  amount_paid?: number;
 }
+
+// ── new service types (unchanged) ───────────────────────────────────────
+
 export interface PlayerDTO {
     playerName: string;
     playerNumber: string;
@@ -65,14 +119,12 @@ export interface DownloadPurchaseDataOptions {
     type: "passwise" | "gamewise";
 }
 
-// ── Purchases-by-email ──────────────────────────────────────────────────
-
 export interface PurchaseSummaryDTO {
     purchase_id: number;
     person_name: string;
     pass_name: string;
     pass_id: number;
-    status: string; // PurchaseStatus: PENDING | CONFIRMED | FAILED | CANCELLED | REFUNDED
+    status: string;
     purchase_time: string;
 }
 
@@ -81,8 +133,6 @@ export interface GetPurchasesByEmailResponse {
     count: number;
     purchases: PurchaseSummaryDTO[];
 }
-
-// ── Selected games in a purchase ────────────────────────────────────────
 
 export interface SelectedGameDTO {
     id: number;
@@ -114,7 +164,6 @@ export interface UpdateSelectedGamesResponse {
     removed: number[];
 }
 
-/** Shared error-message extraction, same precedence used by purchaseCashPass. */
 function extractErrorMessage(err: any, fallback: string): string {
     return (
         err?.response?.data?.error ??
@@ -137,7 +186,6 @@ const COLUMNS_PASSWISE = [
     { header: 'Invoice URL', key: 'invoiceUrl', width: 40 },
 ];
 
-/** Excel sheet names: max 31 chars, and can't contain : \ / ? * [ ] */
 function sanitizeSheetName(name: string, usedNames: Set<string>): string {
     const safe = String(name).replace(/[:\\/?*[\]]/g, '-').trim().slice(0, 31) || 'Sheet';
 
@@ -152,7 +200,6 @@ function sanitizeSheetName(name: string, usedNames: Set<string>): string {
     return candidate;
 }
 
-/** One sheet per pass; one row per player-game (mirrors export-passes.js). */
 function buildPasswiseWorkbook(passes: PassDTO[]): ExcelJS.Workbook {
     const workbook = new ExcelJS.Workbook();
     workbook.creator = 'passPurchasesService';
@@ -236,7 +283,6 @@ const COLUMNS_GAMEWISE = [
     { header: 'Invoice URL', key: 'invoiceUrl', width: 40 },
 ];
 
-/** One sheet per game; one row per player. No selectedGames column — redundant once scoped per-game. */
 function buildGamewiseWorkbook(games: GameDTO[]): ExcelJS.Workbook {
     const workbook = new ExcelJS.Workbook();
     workbook.creator = 'passPurchasesService';
@@ -274,7 +320,48 @@ function buildGamewiseWorkbook(games: GameDTO[]): ExcelJS.Workbook {
     return workbook;
 }
 
-export const passPurchasesService = {
+export const passService = {
+    // ── RESTORED from old service ───────────────────────────────────────
+    getAll: async (): Promise<ClientPass[]> => {
+        const response = await api.get<ApiResponse<ClientPass[]>>(API_ENDPOINTS.PASS.GET_PASSES);
+
+        if (!response.data.success || !response.data.data) {
+            throw new Error(response.data.error || 'Failed to fetch passes');
+        }
+
+        return response.data.data;
+    },
+
+    getById: async (id: string): Promise<ClientPass> => {
+        const response = await api.get<ApiResponse<ClientPass>>(API_ENDPOINTS.PASS.GET_PASS_BY_ID(id));
+
+        if (!response.data.success || !response.data.data) {
+            throw new Error(response.data.error || `Failed to fetch pass with ID: ${id}`);
+        }
+
+        return response.data.data;
+    },
+
+    purchaseAPass: async (data: PurchasePassPayload): Promise<PurchasePassResponse> => {
+        try {
+            const response = await api.post<ApiResponse<PurchasePassResponse>>(
+                API_ENDPOINTS.PURCHASE.PURCHASE_A_PASS,
+                data
+            );
+
+            if (!response.data.success || !response.data.data) {
+                throw new Error(response.data.error || 'Failed to purchase a pass');
+            }
+
+            return response.data.data;
+        } catch (err: any) {
+            const message =
+                err?.response?.data?.error ?? err?.message ?? 'Failed to purchase a pass';
+            throw new Error(message);
+        }
+    },
+
+    // ── new service methods (unchanged) ───────────────────────────────────
     async getAllPassPurchasesWithPlayers(
         page: number = 1,
         pageSize: number = 10
@@ -284,12 +371,11 @@ export const passPurchasesService = {
         });
         return response.data;
     },
-    async getAllGamesWithPlayers(){
+
+    async getAllGamesWithPlayers() {
         const response = await api.get(API_ENDPOINTS.ADMIN.GET_ALL_GAMES_WITH_PLAYERS);
         return response.data;
     },
-
-    
 
     async downloadPurchaseDataAsExcel(options: DownloadPurchaseDataOptions): Promise<Blob> {
         if (options.type !== "passwise" && options.type !== "gamewise") {
@@ -297,7 +383,7 @@ export const passPurchasesService = {
         }
 
         if (options.type === "gamewise") {
-           const games = await this.getAllGamesWithPlayers();
+            const games = await this.getAllGamesWithPlayers();
             const workbook = buildGamewiseWorkbook(games.data || []);
 
             const buffer = await workbook.xlsx.writeBuffer();
@@ -315,26 +401,25 @@ export const passPurchasesService = {
         });
     },
 
-    async purchaseCashPass (data: PurchasePassPayload): Promise<string> {
-    try {
-        const response = await api.post(
-            API_ENDPOINTS.PURCHASE.PURCHASE_CASH_PASS,
-            data
-        );
-    
-        if (!response.data.success) {
-            throw new Error(response.data.error || 'Failed to purchase a pass');
-        }
-    
-        return response.data.message;
-    } catch (err: any) {
-        
-        const message =
-        err?.response?.data?.message ?? err?.response?.data?.error ?? err?.message ?? 'Failed to purchase a pass';
-        throw new Error(message);
-    }},
+    async purchaseCashPass(data: PurchasePassPayload): Promise<string> {
+        try {
+            const response = await api.post(
+                API_ENDPOINTS.PURCHASE.PURCHASE_CASH_PASS,
+                data
+            );
 
-    /** All purchases (potentially multiple) linked to a given email. */
+            if (!response.data.success) {
+                throw new Error(response.data.error || 'Failed to purchase a pass');
+            }
+
+            return response.data.message;
+        } catch (err: any) {
+            const message =
+                err?.response?.data?.message ?? err?.response?.data?.error ?? err?.message ?? 'Failed to purchase a pass';
+            throw new Error(message);
+        }
+    },
+
     async getPurchasesByEmail(email: string): Promise<GetPurchasesByEmailResponse> {
         try {
             const response = await api.get(
@@ -346,7 +431,6 @@ export const passPurchasesService = {
         }
     },
 
-    /** Currently-selected games for one purchase, each with its difficulty. */
     async getSelectedGamesInPurchase(purchaseId: number): Promise<GetSelectedGamesResponse> {
         try {
             const response = await api.get(
@@ -358,7 +442,6 @@ export const passPurchasesService = {
         }
     },
 
-    /** Replaces a purchase's selected games with the given set of game ids. */
     async updateSelectedGamesInPurchase(
         purchaseId: number,
         gameIds: number[]
